@@ -34,14 +34,16 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-start = time.time()
-counter = 0
+# start = time.time()
+# counter = 0
 
 plt.ion()
 x = []
 x.append(0)
 y = []
 y.append(0)
+z = []
+z.append(0)
 a = []
 a.append(0)
 b = []
@@ -70,9 +72,11 @@ watchdog_names, watchdog_types = conf.get_recipe("watchdog")
 
 digital_connection = rtde.RTDE(DIGITAL_HOST, ROBOT_PORT)
 digital_connection.connect()
+print("digital twin connected")
 
 physical_connection = rtde.RTDE(PHYSICAL_HOST, ROBOT_PORT)
 physical_connection.connect()
+print("physical twin connected")
 
 # get controller version
 digital_connection.get_controller_version()
@@ -84,12 +88,12 @@ physical_connection.get_controller_version()
 
 # setup recipes
 digital_connection.send_output_setup(state_names, state_types)
-setp = digital_connection.send_input_setup(setp_names, setp_types)
-watchdog = digital_connection.send_input_setup(watchdog_names, watchdog_types)
+digital_setpoint = digital_connection.send_input_setup(setp_names, setp_types)
+digital_watchdog = digital_connection.send_input_setup(watchdog_names, watchdog_types)
 
 physical_connection.send_output_setup(state_names, state_types)
-# setp = physical_connection.send_input_setup(setp_names, setp_types)
-# watchdog = physical_connection.send_input_setup(watchdog_names, watchdog_types)
+physical_setpoint = physical_connection.send_input_setup(setp_names, setp_types)
+physical_watchdog = physical_connection.send_input_setup(watchdog_names, watchdog_types)
 
 
 
@@ -103,15 +107,23 @@ setp2 = [-0.12, -0.51, 0.21, 0, 3.11, 0.04]
 # setp1 = [-0.12, -0.43, 0.14, 0, 3.11, 2.0]
 # setp2 = [-0.12, -0.51, 0.21, 0, 3.11, 1.0]
 
-setp.input_double_register_0 = 0
-setp.input_double_register_1 = 0
-setp.input_double_register_2 = 0
-setp.input_double_register_3 = 0
-setp.input_double_register_4 = 0
-setp.input_double_register_5 = 0
+digital_setpoint.input_double_register_0 = 0
+digital_setpoint.input_double_register_1 = 0
+digital_setpoint.input_double_register_2 = 0
+digital_setpoint.input_double_register_3 = 0
+digital_setpoint.input_double_register_4 = 0
+digital_setpoint.input_double_register_5 = 0
 
-# The function "rtde_set_watchdog" in the "rtde_control_loop.urp" creates a 1 Hz watchdog
-watchdog.input_int_register_0 = 0
+physical_setpoint.input_double_register_0 = 0
+physical_setpoint.input_double_register_1 = 0
+physical_setpoint.input_double_register_2 = 0
+physical_setpoint.input_double_register_3 = 0
+physical_setpoint.input_double_register_4 = 0
+physical_setpoint.input_double_register_5 = 0
+
+# The function "rtde_set_watchdog" in the "rtde_control_loop.urp" creates a 1 Hz digital_watchdog
+digital_watchdog.input_int_register_0 = 0
+physical_watchdog.input_int_register_0 = 0
 
 
 def setp_to_list(sp):
@@ -131,16 +143,29 @@ def list_to_setp(sp, list):
 if not digital_connection.send_start():
     sys.exit()
 
+if not physical_connection.send_start():
+    sys.exit()
+
 # control loop
 move_completed = True
+start = 0
+timer_initiated = False
 
 while keep_running:
-   
+
     # receive the current state
     digital_state = digital_connection.receive()
     physical_state = physical_connection.receive()
+
+    if not timer_initiated:
+        digital_start = digital_state.timestamp
+        physical_start = physical_state.timestamp
+        # physical_start = digital_state.timestamp
+        timer_initiated = True
     
-    # print(f"joint positions = {state.actual_q}")
+
+    # print(f"joint positions = {digital_state.actual_q}")
+    # print(f"real joint position = {physical_state.actual_q[2]}")
     # print(f"currents = {state.actual_current}")
     # print(f"target_currents = {state.target_current}")
     # print(f"target_moments = {state.target_moment}")
@@ -153,67 +178,84 @@ while keep_running:
     #         current_moment_ratio.append("inf")
     #     else:
     #         current_moment_ratio.append(digital_state.target_moment[i] / digital_state.actual_current[i])
-   
+
     # print(f"torque/current ratios = {current_moment_ratio}")
 
 
 
-    # plt.figure(1)
-    # x.append(time.time()-start)
+    plt.figure(1)
+    x.append(time.time()-start)
+    # z.append(digital_state.timestamp - digital_start)
+
+    # x.append((digital_state.timestamp - digital_start))
+    # z.append(physical_state.timestamp - physical_start)
     # y.append(digital_state.actual_current[1] * 10)
     # a.append(digital_state.target_moment[1])
+    # y.append(physical_state.target_moment[1])
+    a.append(digital_state.actual_q[2])
+    y.append(physical_state.actual_q[2])
+
+    # a.append(digital_state.actual_current[2])
+    # y.append(physical_state.actual_current[2])
 
 
-
-    # plt.plot(x,a, label = "Target Joint Torques")
-    
+    plt.plot(x,a, label = "sim")
+    plt.plot(x,y, label = "real")
     # plt.plot(x,y, label = "Joint Currents")
-    
-
-    
-    # plt.pause(0.001)
 
 
 
-    # print(f"voltages = {state.actual_joint_voltage}")
+    plt.pause(0.001)
 
-    if digital_state is None or physical_state is None:
+
+
+    # print(f"voltages = {physical_state.actual_joint_voltage}")
+
+    if digital_state is None: #or physical_state is None:
         break
 
     # do something...
-    if move_completed and digital_state.output_int_register_0 == 1:
+    if move_completed and digital_state.output_int_register_0 == 1 and physical_state.output_int_register_0 == 1:
         move_completed = False
-        new_setp = setp1 if setp_to_list(setp) == setp2 else setp2
-        list_to_setp(setp, new_setp)
+
+        new_setp = setp1 if setp_to_list(digital_setpoint) == setp2 else setp2
+        list_to_setp(digital_setpoint, new_setp)
+
         print("New pose = " + str(new_setp))
         print("")
+
+
         # send new setpoint
-        digital_connection.send(setp)
-        physical_connection.send(setp)
-        watchdog.input_int_register_0 = 1
+        digital_connection.send(digital_setpoint)
+        physical_connection.send(digital_setpoint)
+
+        digital_watchdog.input_int_register_0 = 1
+        physical_watchdog.input_int_register_0 = 1
 
         # counter += 1
         # if counter == 2:
-        #     counter = 0 
-        # x = []
-        # y = []
-        # a = []
-        # plt.clf()
+        #     counter = 0
+        x = []
+        y = []
+        a = []
+        z = []
+        plt.clf()
 
-    elif not move_completed and digital_state.output_int_register_0 == 0:
+    elif not move_completed and digital_state.output_int_register_0 == 0 and physical_state.output_int_register_0 == 0:
         print("Move to confirmed pose = " + str(digital_state.target_q))
         print("Move to confirmed pose = " + str(physical_state.target_q))
         print("")
         move_completed = True
-        watchdog.input_int_register_0 = 0
+        digital_watchdog.input_int_register_0 = 0
+        physical_watchdog.input_int_register_0 = 0
 
-    # kick watchdog
-    digital_connection.send(watchdog)
-    physical_connection.send(watchdog)
+    # kick digital_watchdog
+    digital_connection.send(digital_watchdog)
+    physical_connection.send(digital_watchdog)
 
 
-# plt.ioff()
-# plt.show()
+plt.ioff()
+plt.show()
 digital_connection.send_pause()
 physical_connection.send_pause()
 

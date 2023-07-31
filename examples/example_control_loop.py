@@ -144,12 +144,12 @@ while keep_running:
 
     plt.figure(1)
     x.append(time.time()-start)
-    y.append(state.actual_current[1] * 10)
+    y.append(state.actual_current[1])
     a.append(state.target_moment[1])
 
 
 
-    plt.plot(x,a, label = "Target Joint Torques")
+    # plt.plot(x,a, label = "Target Joint Torques")
     
     plt.plot(x,y, label = "Joint Currents")
     

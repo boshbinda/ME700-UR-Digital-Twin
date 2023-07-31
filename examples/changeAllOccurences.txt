@@ -1,3 +1,6 @@
-physical_connection.send_output_setup(state_names, state_types)
-setp = physical_connection.send_input_setup(setp_names, setp_types)
-watchdog = physical_connection.send_input_setup(watchdog_names, watchdog_types)
+physical_setpoint.input_double_register_0 = 0
+physical_setpoint.input_double_register_1 = 0
+physical_setpoint.input_double_register_2 = 0
+physical_setpoint.input_double_register_3 = 0
+physical_setpoint.input_double_register_4 = 0
+physical_setpoint.input_double_register_5 = 0
