@@ -1,0 +1,3 @@
+physical_connection.send_output_setup(state_names, state_types)
+setp = physical_connection.send_input_setup(setp_names, setp_types)
+watchdog = physical_connection.send_input_setup(watchdog_names, watchdog_types)
