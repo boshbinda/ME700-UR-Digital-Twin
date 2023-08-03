@@ -34,8 +34,7 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-# start = time.time()
-# counter = 0
+
 
 plt.ion()
 x = []
@@ -46,8 +45,6 @@ z = []
 z.append(0)
 a = []
 a.append(0)
-b = []
-c = []
 
 ax = plt.subplot()
 
@@ -148,20 +145,19 @@ if not physical_connection.send_start():
 
 # control loop
 move_completed = True
-start = 0
-timer_initiated = False
+
+start = time.time()
+digital_state = digital_connection.receive()
+physical_state = physical_connection.receive()
+digital_start = digital_state.timestamp
+physical_start = physical_state.timestamp
+
 
 while keep_running:
 
     # receive the current state
     digital_state = digital_connection.receive()
     physical_state = physical_connection.receive()
-
-    if not timer_initiated:
-        digital_start = digital_state.timestamp
-        physical_start = physical_state.timestamp
-        # physical_start = digital_state.timestamp
-        timer_initiated = True
     
 
     # print(f"joint positions = {digital_state.actual_q}")
@@ -170,6 +166,10 @@ while keep_running:
     # print(f"target_currents = {state.target_current}")
     # print(f"target_moments = {state.target_moment}")
     # print(f"target_moments = {state.target_moment[1]}")
+
+    print(f"sim = {digital_state.timestamp - digital_start}")
+    print(f"physical = {physical_state.timestamp - physical_start}")
+    # print(f"real = {time.time() - start}")
 
     # current_moment_ratio = []
 
@@ -184,23 +184,23 @@ while keep_running:
 
 
     plt.figure(1)
-    x.append(time.time()-start)
-    # z.append(digital_state.timestamp - digital_start)
+    # x.append(time.time()-start)
+    x.append(digital_state.timestamp - digital_start)
 
     # x.append((digital_state.timestamp - digital_start))
-    # z.append(physical_state.timestamp - physical_start)
+    z.append(physical_state.timestamp - physical_start)
     # y.append(digital_state.actual_current[1] * 10)
     # a.append(digital_state.target_moment[1])
     # y.append(physical_state.target_moment[1])
-    a.append(digital_state.actual_q[2])
-    y.append(physical_state.actual_q[2])
+    a.append(digital_state.actual_qd[2])
+    y.append(physical_state.actual_qd[2])
 
     # a.append(digital_state.actual_current[2])
     # y.append(physical_state.actual_current[2])
 
 
     plt.plot(x,a, label = "sim")
-    plt.plot(x,y, label = "real")
+    plt.plot(z,y, label = "real")
     # plt.plot(x,y, label = "Joint Currents")
 
 
@@ -232,9 +232,9 @@ while keep_running:
         digital_watchdog.input_int_register_0 = 1
         physical_watchdog.input_int_register_0 = 1
 
-        # counter += 1
-        # if counter == 2:
-        #     counter = 0
+        digital_start = digital_state.timestamp
+        physical_start = physical_state.timestamp
+
         x = []
         y = []
         a = []

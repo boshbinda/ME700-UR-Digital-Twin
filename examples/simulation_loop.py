@@ -34,7 +34,6 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-start = time.time()
 counter = 0
 
 plt.ion()
@@ -119,6 +118,9 @@ if not con.send_start():
 
 # control loop
 move_completed = True
+start = time.time()
+state = con.receive()
+digital_start = state.timestamp
 
 while keep_running:
    
@@ -130,32 +132,35 @@ while keep_running:
     # print(f"target_moments = {state.target_moment}")
     # print(f"target_moments = {state.target_moment[1]}")
 
-    current_moment_ratio = []
+    print(f"sim = {state.timestamp - digital_start}")
+    # print(f"real = {time.time() - start}")
 
-    for i in range(len(state.target_current)):
-        if state.actual_current[i] == 0:
-            current_moment_ratio.append("inf")
-        else:
-            current_moment_ratio.append(state.target_moment[i] / state.actual_current[i])
+    # current_moment_ratio = []
+
+    # for i in range(len(state.target_current)):
+    #     if state.actual_current[i] == 0:
+    #         current_moment_ratio.append("inf")
+    #     else:
+    #         current_moment_ratio.append(state.target_moment[i] / state.actual_current[i])
    
-    print(f"torque/current ratios = {current_moment_ratio}")
+    # print(f"torque/current ratios = {current_moment_ratio}")
 
 
 
-    plt.figure(1)
-    x.append(time.time()-start)
-    y.append(state.actual_current[1] * 10)
-    a.append(state.target_moment[1])
+    # plt.figure(1)
+    # x.append(time.time()-start)
+    # y.append(state.actual_current[1] * 10)
+    # a.append(state.target_moment[1])
 
 
 
-    plt.plot(x,a, label = "Target Joint Torques")
+    # plt.plot(x,a, label = "Target Joint Torques")
     
-    plt.plot(x,y, label = "Joint Currents")
+    # plt.plot(x,y, label = "Joint Currents")
     
 
     
-    plt.pause(0.001)
+    # plt.pause(0.001)
 
 
 
@@ -193,8 +198,8 @@ while keep_running:
     con.send(watchdog)
 
 
-plt.ioff()
-plt.show()
+# plt.ioff()
+# plt.show()
 con.send_pause()
 
 con.disconnect()
