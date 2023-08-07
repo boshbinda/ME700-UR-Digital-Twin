@@ -39,12 +39,9 @@ except:
 os.chdir("..")
 os.chdir("examples")
 
-sim_joint_positions = []
-sim_joint_currents = []
-real_joint_positions = []
-real_joint_currents = []
+joint_positions = []
+joint_currents = []
 move_counter = 0
-
 
 sys.path.append("..")
 import logging
@@ -52,7 +49,7 @@ import logging
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 
-import time
+# import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -67,6 +64,8 @@ phys_time = []
 phys_time.append(0)
 dig_data = []
 dig_data.append(0)
+
+
 
 ax = plt.subplot()
 
@@ -93,13 +92,13 @@ digital_connection = rtde.RTDE(DIGITAL_HOST, ROBOT_PORT)
 digital_connection.connect()
 print("digital twin connected")
 
-physical_connection = rtde.RTDE(PHYSICAL_HOST, ROBOT_PORT)
-physical_connection.connect()
+# physical_connection = rtde.RTDE(PHYSICAL_HOST, ROBOT_PORT)
+# physical_connection.connect()
 print("physical twin connected")
 
 # get controller version
 digital_connection.get_controller_version()
-physical_connection.get_controller_version()
+# physical_connection.get_controller_version()
 
 # >> implement controller version checksum to make sure controller implements same trajectory
 
@@ -110,9 +109,9 @@ digital_connection.send_output_setup(state_names, state_types)
 digital_setpoint = digital_connection.send_input_setup(setp_names, setp_types)
 digital_watchdog = digital_connection.send_input_setup(watchdog_names, watchdog_types)
 
-physical_connection.send_output_setup(state_names, state_types)
-physical_setpoint = physical_connection.send_input_setup(setp_names, setp_types)
-physical_watchdog = physical_connection.send_input_setup(watchdog_names, watchdog_types)
+# physical_connection.send_output_setup(state_names, state_types)
+# physical_setpoint = physical_connection.send_input_setup(setp_names, setp_types)
+# physical_watchdog = physical_connection.send_input_setup(watchdog_names, watchdog_types)
 
 
 
@@ -129,16 +128,16 @@ digital_setpoint.input_double_register_3 = 0
 digital_setpoint.input_double_register_4 = 0
 digital_setpoint.input_double_register_5 = 0
 
-physical_setpoint.input_double_register_0 = 0
-physical_setpoint.input_double_register_1 = 0
-physical_setpoint.input_double_register_2 = 0
-physical_setpoint.input_double_register_3 = 0
-physical_setpoint.input_double_register_4 = 0
-physical_setpoint.input_double_register_5 = 0
+# physical_setpoint.input_double_register_0 = 0
+# physical_setpoint.input_double_register_1 = 0
+# physical_setpoint.input_double_register_2 = 0
+# physical_setpoint.input_double_register_3 = 0
+# physical_setpoint.input_double_register_4 = 0
+# physical_setpoint.input_double_register_5 = 0
 
 # The function "rtde_set_watchdog" in the "rtde_control_loop.urp" creates a 1 Hz digital_watchdog
 digital_watchdog.input_int_register_0 = 0
-physical_watchdog.input_int_register_0 = 0
+# physical_watchdog.input_int_register_0 = 0
 
 
 def setp_to_list(sp):
@@ -158,7 +157,7 @@ def list_to_setp(sp, list):
 if not digital_connection.send_start():
     sys.exit()
 
-if not physical_connection.send_start():
+# if not physical_connection.send_start():
     sys.exit()
 
 # control loop
@@ -166,35 +165,32 @@ move_completed = True
 
 #initialize start times separately as simulation time does not reflect real time.
 digital_state = digital_connection.receive()
-physical_state = physical_connection.receive()
+# physical_state = physical_connection.receive()
 digital_start = digital_state.timestamp
-physical_start = physical_state.timestamp
+# physical_start = physical_state.timestamp
 
 
 while keep_running:
 
     # receive the current state
     digital_state = digital_connection.receive()
-    physical_state = physical_connection.receive()
+    # physical_state = physical_connection.receive()
 
     ##################### DATA LOGGING ###############################
 
-    real_joint_positions.append(digital_state.actual_q)
-    real_joint_currents.append(digital_state.actual_current)
-
-    sim_joint_positions.append(physical_state.actual_q)
-    sim_joint_currents.append(physical_state.actual_current)
+    joint_positions.append(digital_state.actual_q)
+    joint_currents.append(digital_state.actual_current)
 
     ###############3########## LIVE DATA PLOTTING LOOP ########################################
     plt.figure(1)
 
     #find current time step separately
     dig_time.append(digital_state.timestamp - digital_start)
-    phys_time.append(physical_state.timestamp - physical_start)
+    # phys_time.append(physical_state.timestamp - physical_start)
 
     #find data to plot
     dig_data.append(digital_state.actual_qd[2])
-    phys_data.append(physical_state.actual_qd[2])
+    # phys_data.append(physical_state.actual_qd[2])
 
     #plot data
     plt.plot(dig_time, dig_data, label = "sim")
@@ -204,15 +200,15 @@ while keep_running:
     plt.pause(0.001)
     ###########################################################################################
 
-    if digital_state is None or physical_state is None:
+    if digital_state is None: #or physical_state is None:
         break
 
     # move sequence between waypoints
-    if move_completed and digital_state.output_int_register_0 == 1 and physical_state.output_int_register_0 == 1:
+    if move_completed and digital_state.output_int_register_0 == 1:# and physical_state.output_int_register_0 == 1:
         move_completed = False
         move_counter += 1
 
-       ############ WRITE DATA OUTPUT BETWEEN WAYPOINTS TO CSV ##############################
+        ############ WRITE DATA OUTPUT BETWEEN WAYPOINTS TO CSV ##############################
         
         os.chdir("..")
         os.chdir("logs")
@@ -220,19 +216,16 @@ while keep_running:
 
         log_filename = f"movement_{move_counter}.csv"
 
-        log_data = zip(dig_time, sim_joint_positions, sim_joint_currents, phys_time, real_joint_positions, real_joint_currents)
+        log_data = zip(dig_time, joint_positions, joint_currents)
     
         with open(log_filename, 'w') as log:
             log_writer = csv.writer(log)
-            # log_writer.writerow() #log column headers
+            # log_writer.writerow()
             log_writer.writerows(log_data)
 
         #check size of data output arays because they don't necessarily have to be the same size although im pretty sure they are.
-        sim_joint_positions = []
-        sim_joint_currents = []
-
-        real_joint_positions = []
-        real_joint_currents = []
+        joint_positions = []
+        joint_currents = []
 
         os.chdir("..")
         os.chdir("..")
@@ -250,38 +243,38 @@ while keep_running:
 
         # send new setpoint
         digital_connection.send(digital_setpoint)
-        physical_connection.send(digital_setpoint)
+        # physical_connection.send(digital_setpoint)
     
         digital_watchdog.input_int_register_0 = 1
-        physical_watchdog.input_int_register_0 = 1
+        # physical_watchdog.input_int_register_0 = 1
 
         #clear plot data and time axes
         digital_start = digital_state.timestamp
-        physical_start = physical_state.timestamp
+        # physical_start = physical_state.timestamp
         dig_time = []
         phys_data = []
         dig_data = []
         phys_time = []
         plt.clf()
 
-    elif not move_completed and digital_state.output_int_register_0 == 0 and physical_state.output_int_register_0 == 0:
+    elif not move_completed and digital_state.output_int_register_0 == 0: # and physical_state.output_int_register_0 == 0:
         print("Move to confirmed pose = " + str(digital_state.target_q))
-        print("Move to confirmed pose = " + str(physical_state.target_q))
+        # print("Move to confirmed pose = " + str(physical_state.target_q))
         print("")
         move_completed = True
         digital_watchdog.input_int_register_0 = 0
-        physical_watchdog.input_int_register_0 = 0
+        # physical_watchdog.input_int_register_0 = 0
 
     # kick digital_watchdog
     digital_connection.send(digital_watchdog)
-    physical_connection.send(digital_watchdog)
+    # physical_connection.send(digital_watchdog)
 
 
 #shutdown sequence
 plt.ioff()
 plt.show()
 digital_connection.send_pause()
-physical_connection.send_pause()
+# physical_connection.send_pause()
 
 digital_connection.disconnect()
-physical_connection.disconnect()
+# physical_connection.disconnect()
