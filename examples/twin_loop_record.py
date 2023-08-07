@@ -25,6 +25,20 @@
 import sys
 import csv
 import datetime
+import os
+os.chdir("..")
+os.chdir("logs")
+print(os.getcwd())
+
+time = datetime.datetime.now()
+try:
+    os.mkdir(f"{time.date()}-{time.hour}:{time.minute}{time.strftime('%p')}")
+except:
+    pass
+
+os.chdir(f"{time.date()}-{time.hour}:{time.minute}{time.strftime('%p')}")
+
+move_counter = 0
 
 sys.path.append("..")
 import logging
@@ -182,9 +196,12 @@ while keep_running:
     # move sequence between waypoints
     if move_completed and digital_state.output_int_register_0 == 1 and physical_state.output_int_register_0 == 1:
         move_completed = False
+        move_counter += 1
 
         ############ WRITE DATA OUTPUT BETWEEN WAYPOINTS TO CSV ##############################
-        log_filename = f"{datetime.datetime.now()}_log.csv"
+        log_filename = f"movement_{move_counter}.csv"
+
+        zip(dig_time, digital_state.actual_q, digital_state.actual_current, phys_time, physical_state.actual_q, physical_state.actual_current)
     
         with open(log_filename, 'w') as log:
             log_writer = csv.writer(log)
