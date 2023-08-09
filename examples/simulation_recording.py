@@ -242,7 +242,7 @@ while keep_running:
 
 
         # send new setpoint
-        digital_connection.send(digital_setpoint)
+        digital_connection.send(digital_setpoint)   
         # physical_connection.send(digital_setpoint)
     
         digital_watchdog.input_int_register_0 = 1

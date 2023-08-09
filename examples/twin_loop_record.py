@@ -52,7 +52,7 @@ import logging
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 
-import time
+# import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 

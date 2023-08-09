@@ -2,9 +2,9 @@ import csv
 import datetime
 import os
 
-open('logs/test2.csv', 'w', newline='')
+# open('logs/test2.csv', 'w', newline='')
 # print("code ended")
-# print(datetime.datetime.now())
+print(datetime.datetime.now())
 # # open(f"{datetime.datetime.now()}_log.csv", 'w')
 
 # print(os.getcwd())
