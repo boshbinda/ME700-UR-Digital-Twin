@@ -192,12 +192,12 @@ while keep_running:
     # y.append(digital_state.actual_current[1] * 10)
     # a.append(digital_state.target_moment[1])
     # y.append(physical_state.target_moment[1])
-    # a.append(digital_state.actual_q[2])
-    # y.append(physical_state.actual_q[2])
+    a.append(digital_state.actual_q[2])
+    y.append(physical_state.actual_q[2])
 
     # a.append(digital_state.actual_current[2])
-    y.append(physical_state.actual_current[2])
-    a.append(physical_state.target_current[2])
+    # y.append(physical_state.actual_current[2])
+    # a.append(physical_state.target_current[2])
 
     plt.plot(x,a, label = "sim")
     plt.plot(z,y, label = "real")

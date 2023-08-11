@@ -179,11 +179,11 @@ while keep_running:
 
     ##################### DATA LOGGING ###############################
 
-    real_joint_positions.append(digital_state.actual_q)
-    real_joint_currents.append(digital_state.actual_current)
+    real_joint_positions.append(physical_state.actual_q)
+    real_joint_currents.append(physical_state.actual_current)
 
-    sim_joint_positions.append(physical_state.actual_q)
-    sim_joint_currents.append(physical_state.actual_current)
+    sim_joint_positions.append(digital_state.actual_q)
+    sim_joint_currents.append(digital_state.actual_current)
 
     ###############3########## LIVE DATA PLOTTING LOOP ########################################
     plt.figure(1)
